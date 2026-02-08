@@ -23,7 +23,7 @@ pub mod ui;
 
 // Re-export commonly used items for convenience
 pub use app::App;
-pub use config::{DEFAULT_HEADER_NAME, DEFAULT_WINDOW_TITLE};
+pub use config::{DEFAULT_HEADER_NAME, WINDOW_TARGETS, WindowTarget};
 pub use files::{discover as discover_files, TextFile};
 pub use logging::{init as init_logging, log};
 pub use platform::{focus_window, is_window_running, send_text};

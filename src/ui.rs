@@ -19,7 +19,7 @@ use std::{
 };
 
 use crate::app::App;
-use crate::config::{NEXT_LINE_DELAY_MS, USER_READ_DELAY_SECS, CANCEL_DELAY_SECS};
+use crate::config::{NEXT_LINE_DELAY_MS, USER_READ_DELAY_SECS, CANCEL_DELAY_SECS, WindowTarget};
 use crate::logging::log;
 use crate::platform::{is_window_running, send_text};
 
@@ -30,17 +30,22 @@ use crate::platform::{is_window_running, send_text};
 pub struct Cli {
     stdout: io::Stdout,
     header_name: String,
-    window_title: String,
+    window_targets: Vec<WindowTarget>,
 }
 
 impl Cli {
-    /// Create a new CLI instance with custom header and target window title.
-    pub fn new(header_name: String, window_title: String) -> Self {
+    /// Create a new CLI instance with custom header and target windows.
+    pub fn new(header_name: String, window_targets: Vec<WindowTarget>) -> Self {
         Self {
             stdout: io::stdout(),
             header_name,
-            window_title,
+            window_targets,
         }
+    }
+
+    /// Find the first running window target.
+    fn find_active_target(&self) -> Option<&WindowTarget> {
+        self.window_targets.iter().find(|t| is_window_running(t.title))
     }
 
     /// Initialize the terminal for the interactive UI.
@@ -154,26 +159,31 @@ impl Cli {
                 ResetColor
             )?;
         } else {
+            // Find the longest filename for column alignment
+            let max_name_len = filtered.iter().map(|f| f.name.len()).max().unwrap_or(0);
+
             for (i, file) in filtered.iter().enumerate().skip(scroll_offset).take(visible_files) {
                 execute!(self.stdout, MoveTo(0, (file_start_y + i - scroll_offset) as u16))?;
+
+                let padded_name = format!("{:<width$}", file.name, width = max_name_len);
 
                 if i == app.selected_index() {
                     execute!(
                         self.stdout,
                         SetBackgroundColor(Color::DarkBlue),
                         SetForegroundColor(Color::White),
-                        Print(format!(" ► {} ", file.name)),
+                        Print(format!(" ► {} ", padded_name)),
                         ResetColor,
                         SetForegroundColor(Color::DarkGrey),
-                        Print(format!("  ({} lines)", file.lines.len())),
+                        Print(format!(" ({} lines)", file.lines.len())),
                         ResetColor
                     )?;
                 } else {
                     execute!(
                         self.stdout,
-                        Print(format!("   {} ", file.name)),
+                        Print(format!("   {} ", padded_name)),
                         SetForegroundColor(Color::DarkGrey),
-                        Print(format!("  ({} lines)", file.lines.len())),
+                        Print(format!(" ({} lines)", file.lines.len())),
                         ResetColor
                     )?;
                 }
@@ -284,11 +294,9 @@ impl Cli {
                             
                             log(&format!("User selected file: '{}' with {} lines", file_name, lines.len()));
                             
-                            // Check if target window is running before proceeding
-                            if !is_window_running(&self.window_title) {
-                                log("ERROR: Target window is not running!");
-                                app.set_error(format!("'{}' is not running!", self.window_title));
-                            } else {
+                            // Find which target window is running
+                            if let Some(target) = self.find_active_target() {
+                                let target = target.clone();
                                 // Exit CLI to send messages (send_text will handle window focus)
                                 self.cleanup()?;
                                 
@@ -296,14 +304,19 @@ impl Cli {
                                 print!("\x1B[2J\x1B[1;1H");
                                 
                                 println!(">>> Selected: {}", file_name);
+                                println!(">>> Target: {}", target.title);
                                 println!(">>> Sending {} lines...\n", lines.len());
 
-                                self.send_all_lines(&lines);
+                                self.send_all_lines(&lines, &target);
                                 
                                 log("All messages sent, re-initializing CLI...");
                                 // Re-initialize CLI and continue
                                 self.init()?;
                                 needs_full_render = true;
+                            } else {
+                                log("ERROR: No target window is running!");
+                                let titles: Vec<&str> = self.window_targets.iter().map(|t| t.title).collect();
+                                app.set_error(format!("None of the target windows are running! ({})", titles.join(", ")));
                             }
                         }
                     }
@@ -325,7 +338,7 @@ impl Cli {
     }
 
     /// Send all lines from the selected file (with cancel support).
-    fn send_all_lines(&self, lines: &[String]) {
+    fn send_all_lines(&self, lines: &[String], target: &WindowTarget) {
         let total = lines.len();
         
         println!("Press [Esc] to cancel at any time.\n");
@@ -353,7 +366,7 @@ impl Cli {
                 width = width
             );
 
-            match send_text(line, &self.window_title) {
+            match send_text(line, target.title, target.shift_enter) {
                 Ok(()) => {
                     thread::sleep(Duration::from_millis(NEXT_LINE_DELAY_MS));
                 }
@@ -488,7 +501,7 @@ impl Cli {
 
 impl Default for Cli {
     fn default() -> Self {
-        Self::new("MadTyping".to_string(), "untitled".to_string())
+        Self::new("MadTyping".to_string(), vec![])
     }
 }
 

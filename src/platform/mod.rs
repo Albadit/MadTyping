@@ -26,6 +26,6 @@ pub fn focus_window(_title: &str) -> bool {
 }
 
 #[cfg(not(windows))]
-pub fn send_text(_text: &str, _window_title: &str) -> Result<(), String> {
+pub fn send_text(_text: &str, _window_title: &str, _shift_enter: bool) -> Result<(), String> {
     Err("Keyboard simulation only supported on Windows".to_string())
 }

@@ -6,7 +6,7 @@
 use mad_typing::{
     App, Cli, 
     discover_files, init_logging, log,
-    DEFAULT_HEADER_NAME, DEFAULT_WINDOW_TITLE,
+    DEFAULT_HEADER_NAME, WINDOW_TARGETS,
 };
 
 /// Run the application.
@@ -23,7 +23,7 @@ fn run_app() -> Result<(), String> {
 
     let mut cli = Cli::new(
         DEFAULT_HEADER_NAME.to_string(),
-        DEFAULT_WINDOW_TITLE.to_string(),
+        WINDOW_TARGETS.to_vec(),
     );
     
     log("Cli created, initializing...");

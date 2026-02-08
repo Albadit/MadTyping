@@ -272,10 +272,10 @@ fn type_text(text: &str) {
 /// This function:
 /// 1. Checks if the target window is running
 /// 2. Focuses the target window
-/// 3. Opens all-chat with Shift+Enter
+/// 3. Opens chat (Shift+Enter for all-chat, or Enter for team chat)
 /// 4. Types the message
 /// 5. Sends with Enter
-pub fn send_text(text: &str, window_title: &str) -> Result<(), String> {
+pub fn send_text(text: &str, window_title: &str, shift_enter: bool) -> Result<(), String> {
     let preview: String = text.chars().take(30).collect();
     log(&format!("send_text() called with: '{}'", preview));
     
@@ -296,14 +296,20 @@ pub fn send_text(text: &str, window_title: &str) -> Result<(), String> {
     // Wait for window to be fully focused
     thread::sleep(Duration::from_millis(FOCUS_DELAY_MS));
 
-    // Step 1: Shift+Enter to open all chat
-    log("Step 1: Pressing Shift+Enter to open chat...");
-    send_key_down(VK_SHIFT.0);
-    thread::sleep(Duration::from_millis(SHIFT_KEY_DELAY_MS));
-    send_key_press(VK_RETURN.0);
-    thread::sleep(Duration::from_millis(SHIFT_KEY_DELAY_MS));
-    send_key_up(VK_SHIFT.0);
-    log("  Shift+Enter sent");
+    // Step 1: Open chat
+    if shift_enter {
+        log("Step 1: Pressing Shift+Enter to open all-chat...");
+        send_key_down(VK_SHIFT.0);
+        thread::sleep(Duration::from_millis(SHIFT_KEY_DELAY_MS));
+        send_key_press(VK_RETURN.0);
+        thread::sleep(Duration::from_millis(SHIFT_KEY_DELAY_MS));
+        send_key_up(VK_SHIFT.0);
+        log("  Shift+Enter sent");
+    } else {
+        log("Step 1: Pressing Enter to open chat...");
+        send_key_press(VK_RETURN.0);
+        log("  Enter sent");
+    }
     
     // Wait for chat to open
     thread::sleep(Duration::from_millis(CHAT_OPEN_DELAY_MS));

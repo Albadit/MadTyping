@@ -9,7 +9,7 @@ use std::{
     path::PathBuf,
 };
 
-use crate::config::SUPPORTED_EXTENSIONS;
+use crate::config::{REPLACE_SPACES, SPACE_REPLACEMENT, SUPPORTED_EXTENSIONS};
 
 /// Represents a discovered text file with its contents.
 #[derive(Clone, Debug)]
@@ -36,7 +36,13 @@ impl TextFile {
                     .lines()
                     .map(|l| l.trim())
                     .filter(|l| !l.is_empty())
-                    .map(|l| l.to_string())
+                    .map(|l| {
+                        if REPLACE_SPACES {
+                            replace_lonely_spaces(l, SPACE_REPLACEMENT)
+                        } else {
+                            l.to_string()
+                        }
+                    })
                     .collect();
                 
                 if lines.is_empty() {
@@ -116,6 +122,32 @@ fn is_supported_extension(path: &PathBuf) -> bool {
             SUPPORTED_EXTENSIONS.contains(&ext_lower.as_str())
         })
         .unwrap_or(false)
+}
+
+/// Replace spaces with a fill character, but keep single spaces that have
+/// a non-space character on both sides (e.g. "GG EZ" keeps its space,
+/// but "█     █" fills the gap with the replacement char).
+fn replace_lonely_spaces(line: &str, replacement: char) -> String {
+    let chars: Vec<char> = line.chars().collect();
+    let len = chars.len();
+    let mut result = String::with_capacity(len);
+
+    for i in 0..len {
+        if chars[i] == ' ' {
+            let has_char_before = i > 0 && chars[i - 1] != ' ';
+            let has_char_after = i + 1 < len && chars[i + 1] != ' ';
+            if has_char_before && has_char_after {
+                // Single space between two non-space chars — keep it
+                result.push(' ');
+            } else {
+                result.push(replacement);
+            }
+        } else {
+            result.push(chars[i]);
+        }
+    }
+
+    result
 }
 
 #[cfg(test)]

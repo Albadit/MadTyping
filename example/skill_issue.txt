@@ -1,0 +1,9 @@
+╭━━━━━━━━━━━━━━━━━━━━━━━━╮
+┃  SKILL ISSUE DETECTED  ┃
+┃  ───────────────────   ┃
+┃  ✗ Map Awareness       ┃
+┃  ✗ CS Per Minute       ┃
+┃  ✗ Positioning         ┃
+┃  ✗ Decision Making     ┃
+┃  ✓ Blaming Jungler     ┃
+╰━━━━━━━━━━━━━━━━━━━━━━━━╯

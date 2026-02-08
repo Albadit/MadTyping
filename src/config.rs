@@ -53,8 +53,39 @@ pub const LOG_ENABLED: bool = false;
 /// Default application header name
 pub const DEFAULT_HEADER_NAME: &str = "MadTyping - LoL Chat Tool";
 
-/// Default target window title to search for
-pub const DEFAULT_WINDOW_TITLE: &str = "League of Legends (TM) Client";
+/// Window title for the League of Legends client (lobby/launcher)
+pub const CLIENT_WINDOW_TITLE: &str = "League of Legends";
+
+/// Window title for the in-game League of Legends window
+pub const GAME_WINDOW_TITLE: &str = "League of Legends (TM) Client";
+
+/// A target window with its title and chat-open behavior.
+#[derive(Clone, Debug)]
+pub struct WindowTarget {
+    /// The window title to search for
+    pub title: &'static str,
+    /// If true, use Shift+Enter to open chat (all-chat); if false, use Enter
+    pub shift_enter: bool,
+}
+
+/// Default list of window targets to try, in priority order.
+pub const WINDOW_TARGETS: &[WindowTarget] = &[
+    WindowTarget {
+        title: CLIENT_WINDOW_TITLE,
+        shift_enter: false,
+    },
+    WindowTarget {
+        title: GAME_WINDOW_TITLE,
+        shift_enter: true,
+    },
+];
+
+/// Replace spaces with ░ in file lines to preserve ASCII art alignment in chat.
+/// Set to false to send lines with normal spaces.
+pub const REPLACE_SPACES: bool = true;
+
+/// The character to replace spaces with when REPLACE_SPACES is enabled.
+pub const SPACE_REPLACEMENT: char = '░';
 
 /// Supported file extensions for text files
 pub const SUPPORTED_EXTENSIONS: &[&str] = &["txt", "md"];
